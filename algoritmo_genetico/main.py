@@ -16,14 +16,34 @@ def main():
     tracemalloc.start()
     start_time = time.perf_counter()
 
-    # Lista arquivos .tsp no diretório atual
-    tsp_files = [f for f in os.listdir('.') if f.endswith('.tsp')]
-    
+    # Determina o diretório de mapas (pasta 'mapas' na raiz do projeto)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    mapas_dir = os.path.abspath(os.path.join(script_dir, '..', 'mapas'))
+
+    # Lista arquivos .tsp na pasta de mapas
+    if os.path.exists(mapas_dir):
+        tsp_files = [f for f in os.listdir(mapas_dir) if f.endswith('.tsp')]
+    else:
+        tsp_files = []
+
     # Permite passar o mapa por linha de comando ou escolher interativamente
     if len(sys.argv) > 1:
-        selected_file = sys.argv[1]
+        arg_file = sys.argv[1]
+        if os.path.exists(arg_file):
+            selected_file = arg_file
+        else:
+            potential_file = os.path.join(mapas_dir, arg_file)
+            if os.path.exists(potential_file):
+                selected_file = potential_file
+            else:
+                print(f"[ERRO] O arquivo '{arg_file}' nao foi encontrado diretamente nem na pasta '{mapas_dir}'.")
+                sys.exit(1)
     else:
-        print("Arquivos .tsp encontrados no diretorio:")
+        if not tsp_files:
+            print(f"[ERRO] Nenhum arquivo .tsp encontrado na pasta de mapas ('{mapas_dir}').")
+            sys.exit(1)
+
+        print("Arquivos .tsp encontrados na pasta 'mapas':")
         for idx, f in enumerate(tsp_files):
             print(f"{idx + 1}: {f}")
         
@@ -35,6 +55,8 @@ def main():
                 selected_file = tsp_files[int(choice) - 1]
         except (ValueError, IndexError, KeyboardInterrupt, EOFError):
             selected_file = tsp_files[0]
+        
+        selected_file = os.path.join(mapas_dir, selected_file)
 
     print(f"\n[INFO] Carregando o arquivo de mapa: {selected_file}...")
     problem = tsplib95.load(selected_file)
