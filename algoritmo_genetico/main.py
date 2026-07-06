@@ -92,12 +92,14 @@ def main():
     print(f"\n[SUCESSO] Execucao concluida!")
     print(f"Melhor distancia encontrada (Fitness final): {fitness_list[-1]:.2f}")
     
+    map_name = os.path.basename(selected_file)
+    
     # Gráfico 1: Plot da Rota Física Encontrada
     plt.figure(figsize=(8, 6))
     plt.plot(result_pos_list[:, 0], result_pos_list[:, 1], 'o-r', label='Trecho da Rota')
     # Destaca o ponto inicial/final do caixeiro
     plt.plot(result_pos_list[0, 0], result_pos_list[0, 1], 'g^', markersize=12, label='Ponto Inicial/Final')
-    plt.title(f"Melhor Rota Encontrada - Mapa: {selected_file}")
+    plt.title(f"Algoritmo Genético - Melhor Rota - {map_name}")
     plt.xlabel("Coordenada X (Leste-Oeste)")
     plt.ylabel("Coordenada Y (Norte-Sul)")
     plt.grid(True, linestyle='--', alpha=0.5)
@@ -106,7 +108,7 @@ def main():
     # Gráfico 2: Evolução da Aptidão (Fitness)
     plt.figure(figsize=(8, 5))
     plt.plot(fitness_list, color='blue', linewidth=2, label='Distancia da Melhor Rota')
-    plt.title("Curva de Aprendizado / Evolucao da Aptidao (Fitness)")
+    plt.title(f"Algoritmo Genético - Evolução do Fitness - {map_name}")
     plt.xlabel("Geracao (Iteracao)")
     plt.ylabel("Distancia Total do Caminho (Menor e melhor)")
     plt.grid(True, linestyle='--', alpha=0.5)
