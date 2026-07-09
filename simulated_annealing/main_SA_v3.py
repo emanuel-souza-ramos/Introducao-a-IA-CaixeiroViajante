@@ -2,8 +2,6 @@ import sys
 import os
 import time
 import tracemalloc
-import random
-import math
 import numpy as np
 import tsplib95
 import matplotlib.pyplot as plt
@@ -13,23 +11,22 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 if script_dir not in sys.path:
     sys.path.insert(0, script_dir)
 
-# Imports locais de Sa serão feitos dinamicamente na função main
+from sa_v3 import Sa
+
+# Heurística para resolver o problema do Caixeiro Viajante (TSP) usando Simulated Annealing V3.
+# Parâmetros: T_0 = 500, alpha = 0.90, patience = 150
 
 def main():
-    # Inicia o rastreamento de memória e tempo para medir tudo usado na execução
     tracemalloc.start()
     start_time = time.perf_counter()
 
-    # Determina o diretório de mapas (pasta 'mapas' na raiz do projeto)
     mapas_dir = os.path.abspath(os.path.join(script_dir, '..', 'mapas'))
 
-    # Lista arquivos .tsp na pasta de mapas
     if os.path.exists(mapas_dir):
         tsp_files = [f for f in os.listdir(mapas_dir) if f.endswith('.tsp')]
     else:
         tsp_files = []
 
-    # Permite passar o mapa por linha de comando ou escolher interativamente
     if len(sys.argv) > 1:
         arg_file = sys.argv[1]
         if os.path.exists(arg_file):
@@ -68,42 +65,16 @@ def main():
     
     print(f"[INFO] Mapa carregado com sucesso. Total de cidades (nos): {n}")
     
-    # Extrai as coordenadas X e Y de cada cidade do arquivo de mapa
     city_pos_list = np.array([problem.node_coords[node] for node in nodes])
     
-    # Constrói a matriz de distância com os pesos das arestas oficiais do formato TSPLIB (EUC_2D)
     city_dist_mat = np.zeros((n, n))
     for i in range(n):
         for j in range(n):
             city_dist_mat[i, j] = problem.get_weight(nodes[i], nodes[j])
             
-    print("\nVersões do Simulated Annealing disponíveis:")
-    print("1: SA V1 (T0: 1000, alpha: 0.95, patience: 300) - Versão Atual")
-    print("2: SA V2 (T0: 1000, alpha: 0.98, patience: 300) - Resfriamento Lento")
-    print("3: SA V3 (T0: 500, alpha: 0.90, patience: 150) - Resfriamento Rápido")
+    print("[INFO] Matriz de distancias gerada. Iniciando o Simulated Annealing V3...")
     
-    try:
-        ver_choice = input("Escolha a versão do Simulated Annealing (padrao 1): ").strip()
-        if ver_choice == "2":
-            from sa_v2 import Sa
-            version_label = "V2"
-            T_0, alpha, patience = 1000, 0.98, 300
-        elif ver_choice == "3":
-            from sa_v3 import Sa
-            version_label = "V3"
-            T_0, alpha, patience = 500, 0.90, 150
-        else:
-            from sa_v1 import Sa
-            version_label = "V1"
-            T_0, alpha, patience = 1000, 0.95, 300
-    except (ValueError, KeyboardInterrupt, EOFError):
-        from sa_v1 import Sa
-        version_label = "V1"
-        T_0, alpha, patience = 1000, 0.95, 300
-
-    print(f"\n[INFO] Matriz de distancias gerada. Iniciando o Simulated Annealing {version_label}...")
-    
-    sa = Sa(city_dist_mat, T_0=T_0, T_f=1.5, alpha=alpha, patience=patience, max_iter=2000)
+    sa = Sa(city_dist_mat, T_0=500, T_f=1.5, alpha=0.90, patience=150)
     result_list, fitness_list = sa.train()
     result = list(result_list[-1])
     result.append(result[0])
@@ -111,7 +82,7 @@ def main():
     result_pos_list = city_pos_list[result, :]
     
     print(f"\n[SUCESSO] Execucao concluida!")
-    print(f"Melhor distancia encontrada (Fitness final) no SA {version_label}: {fitness_list[-1]:.2f}")
+    print(f"Melhor distancia encontrada (Fitness final): {fitness_list[-1]:.2f}")
     
     map_name = os.path.basename(selected_file)
     
@@ -119,22 +90,21 @@ def main():
     plt.figure(figsize=(8, 6))
     plt.plot(result_pos_list[:, 0], result_pos_list[:, 1], 'o-r', label='Trecho da Rota')
     plt.plot(result_pos_list[0, 0], result_pos_list[0, 1], 'g^', markersize=12, label='Ponto Inicial/Final')
-    plt.title(f"Simulated Annealing {version_label} - Melhor Rota - {map_name}")
-    plt.xlabel("Coordenada X (Leste-Oeste)")
-    plt.ylabel("Coordenada Y (Norte-Sul)")
+    plt.title(f"Simulated Annealing V3 - Melhor Rota - {map_name}")
+    plt.xlabel("Coordenada X")
+    plt.ylabel("Coordenada Y")
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.legend(loc='best')
     
     # Gráfico 2: Evolução da Aptidão (Fitness)
     plt.figure(figsize=(8, 5))
     plt.plot(fitness_list, color='blue', linewidth=2, label='Distancia da Melhor Rota')
-    plt.title(f"Simulated Annealing {version_label} - Evolução do Fitness - {map_name}")
+    plt.title(f"Simulated Annealing V3 - Evolução do Fitness - {map_name}")
     plt.xlabel("Geração (Iteração)")
-    plt.ylabel("Distancia Total do Caminho (Menor e melhor)")
+    plt.ylabel("Distancia Total")
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.legend(loc='best')
     
-    # Captura o tempo total e pico de memória antes do plt.show() (que bloqueia a execução)
     end_time = time.perf_counter()
     _, peak_memory = tracemalloc.get_traced_memory()
     tracemalloc.stop()
@@ -143,7 +113,7 @@ def main():
     peak_memory_mb = peak_memory / (1024 * 1024)
     
     print("\n" + "=" * 50)
-    print(f"ESTATÍSTICAS DE PERFORMANCE DA EXECUÇÃO (SA {version_label})")
+    print("ESTATÍSTICAS DE PERFORMANCE DA EXECUÇÃO (SA V3)")
     print("=" * 50)
     print(f"Tempo total de processamento: {elapsed_time:.3f} segundos")
     print(f"Pico de consumo de memória: {peak_memory_mb:.3f} MB")

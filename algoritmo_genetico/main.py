@@ -5,7 +5,7 @@ import tracemalloc
 import numpy as np
 import tsplib95
 import matplotlib.pyplot as plt
-from ga import Ga
+# Imports de Ga dinâmicos serão feitos na função main
 
 # Heurística para resolver o problema do Caixeiro Viajante (TSP) usando Algoritmo Genético.
 # O Algoritmo Genético busca a melhor rota aproximada simulando a evolução biológica de uma
@@ -74,15 +74,38 @@ def main():
         for j in range(n):
             city_dist_mat[i, j] = problem.get_weight(nodes[i], nodes[j])
             
-    print("[INFO] Matriz de distancias gerada. Iniciando o Algoritmo Genetico...")
+    print("\nVersões do Algoritmo Genético disponíveis:")
+    print("1: GA V1 (População: 100, Tournament Size: 5) - Versão Atual")
+    print("2: GA V2 (População: 200, Tournament Size: 5)")
+    print("3: GA V3 (População: 500, Tournament Size: 10)")
     
-    # Inicializa o Algoritmo Genético com os hiperparâmetros:
-    # - individual_num: Tamanho da população de caminhos simultâneos
-    # - gen_num: Número de gerações para buscar a convergência (máximo de 2000)
-    # - mutate_prob: Probabilidade de aplicar mutação em cada nova rota gerada
-    # - patience: Número de gerações consecutivas sem melhora antes de parar
-    # - tournament_size: Tamanho do torneio para a seleção dos indivíduos
-    ga = Ga(city_dist_mat, individual_num=100, gen_num=2000, mutate_prob=0.2, patience=300, tournament_size=5)
+    try:
+        ver_choice = input("Escolha a versão do algoritmo genético (padrao 1): ").strip()
+        if ver_choice == "2":
+            from ga_v2 import Ga
+            version_label = "V2"
+            individual_num = 200
+            tournament_size = 5
+        elif ver_choice == "3":
+            from ga_v3 import Ga
+            version_label = "V3"
+            individual_num = 500
+            tournament_size = 10
+        else:
+            from ga_v1 import Ga
+            version_label = "V1"
+            individual_num = 100
+            tournament_size = 5
+    except (ValueError, KeyboardInterrupt, EOFError):
+        from ga_v1 import Ga
+        version_label = "V1"
+        individual_num = 100
+        tournament_size = 5
+
+    print(f"\n[INFO] Matriz de distancias gerada. Iniciando o Algoritmo Genetico {version_label}...")
+    
+    # Inicializa o Algoritmo Genético com os hiperparâmetros correspondentes
+    ga = Ga(city_dist_mat, individual_num=individual_num, gen_num=2000, mutate_prob=0.2, patience=300, tournament_size=tournament_size)
     result_list, fitness_list = ga.train()
     result = result_list[-1]
     
@@ -90,7 +113,7 @@ def main():
     result_pos_list = city_pos_list[result, :]
     
     print(f"\n[SUCESSO] Execucao concluida!")
-    print(f"Melhor distancia encontrada (Fitness final): {fitness_list[-1]:.2f}")
+    print(f"Melhor distancia encontrada (Fitness final) no GA {version_label}: {fitness_list[-1]:.2f}")
     
     map_name = os.path.basename(selected_file)
     
@@ -99,7 +122,7 @@ def main():
     plt.plot(result_pos_list[:, 0], result_pos_list[:, 1], 'o-r', label='Trecho da Rota')
     # Destaca o ponto inicial/final do caixeiro
     plt.plot(result_pos_list[0, 0], result_pos_list[0, 1], 'g^', markersize=12, label='Ponto Inicial/Final')
-    plt.title(f"Algoritmo Genético - Melhor Rota - {map_name}")
+    plt.title(f"Algoritmo Genético {version_label} - Melhor Rota - {map_name}")
     plt.xlabel("Coordenada X (Leste-Oeste)")
     plt.ylabel("Coordenada Y (Norte-Sul)")
     plt.grid(True, linestyle='--', alpha=0.5)
@@ -108,7 +131,7 @@ def main():
     # Gráfico 2: Evolução da Aptidão (Fitness)
     plt.figure(figsize=(8, 5))
     plt.plot(fitness_list, color='blue', linewidth=2, label='Distancia da Melhor Rota')
-    plt.title(f"Algoritmo Genético - Evolução do Fitness - {map_name}")
+    plt.title(f"Algoritmo Genético {version_label} - Evolução do Fitness - {map_name}")
     plt.xlabel("Geracao (Iteracao)")
     plt.ylabel("Distancia Total do Caminho (Menor e melhor)")
     plt.grid(True, linestyle='--', alpha=0.5)
@@ -123,7 +146,7 @@ def main():
     peak_memory_mb = peak_memory / (1024 * 1024)
     
     print("\n" + "=" * 50)
-    print("ESTATÍSTICAS DE PERFORMANCE DA EXECUÇÃO")
+    print(f"ESTATÍSTICAS DE PERFORMANCE DA EXECUÇÃO (GA {version_label})")
     print("=" * 50)
     print(f"Tempo total de processamento: {elapsed_time:.3f} segundos")
     print(f"Pico de consumo de memória: {peak_memory_mb:.3f} MB")
